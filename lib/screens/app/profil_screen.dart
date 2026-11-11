@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../models/student_profile.dart';
 import '../../utils/colors.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/app_snackbar.dart';
 import '../../widgets/blur_background.dart';
 import '../../widgets/logout_dialog.dart';
+import '../../widgets/profile_avatar.dart';
 import '../auth/login_screen.dart';
 
 class ProfilScreen extends StatefulWidget {
-  const ProfilScreen({super.key});
+  const ProfilScreen({super.key, this.onBackToHome});
+
+  final VoidCallback? onBackToHome;
 
   @override
   State<ProfilScreen> createState() => _ProfilScreenState();
@@ -15,20 +22,21 @@ class ProfilScreen extends StatefulWidget {
 
 class _ProfilScreenState extends State<ProfilScreen> {
   // Controllers
-  final _nomorAbsenController = TextEditingController(text: '28');
-  final _waController = TextEditingController(text: '0812-3456-7890');
+  final _nomorAbsenController = TextEditingController(
+    text: StudentProfile.instance.attendanceNumber,
+  );
+  final _waController = TextEditingController(
+    text: StudentProfile.instance.phoneNumber,
+  );
   final _kontakWaliController = TextEditingController(
-      text: 'H. Budi Santoso (Ayah) - 0811-9876-5432');
-  final _alamatController =
-      TextEditingController(text: 'Jl. Soekarno Hatta');
+    text: StudentProfile.instance.guardianPhone,
+  );
+  final _alamatController = TextEditingController(
+    text: StudentProfile.instance.address,
+  );
 
-  // Dropdown kelas
-  String _selectedKelas = '7-C';
-  static const _kelasOptions = [
-    '7-A', '7-B', '7-C', '7-D', '7-E',
-    '8-A', '8-B', '8-C', '8-D', '8-E',
-    '9-A', '9-B', '9-C', '9-D', '9-E',
-  ];
+  String _selectedKelas = StudentProfile.instance.grade;
+  static const _kelasOptions = ['7', '8', '9'];
 
   @override
   void dispose() {
@@ -39,8 +47,75 @@ class _ProfilScreenState extends State<ProfilScreen> {
     super.dispose();
   }
 
-  void _handleSave() {
-    AppSnackBar.show(context, 'Perubahan data berhasil disimpan');
+  bool _isNumeric(TextEditingController controller) =>
+      RegExp(r'^\d+$').hasMatch(controller.text);
+
+  Future<void> _handleSave() async {
+    setState(() {});
+    if (!_isNumeric(_nomorAbsenController) ||
+        !_isNumeric(_waController) ||
+        !_isNumeric(_kontakWaliController)) {
+      AppSnackBar.show(
+        context,
+        'Periksa kembali nomor absen dan nomor telepon.',
+        isError: true,
+      );
+      return;
+    }
+
+    try {
+      await StudentProfile.instance.saveDetails(
+        grade: _selectedKelas,
+        attendanceNumber: _nomorAbsenController.text,
+        phoneNumber: _waController.text,
+        guardianPhone: _kontakWaliController.text,
+        address: _alamatController.text,
+      );
+      if (mounted) {
+        AppSnackBar.show(context, 'Perubahan data berhasil disimpan');
+      }
+    } on Exception catch (error) {
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          'Data profil gagal disimpan: $error',
+          isError: true,
+        );
+      }
+    }
+  }
+
+  Future<void> _changeProfilePhoto() async {
+    try {
+      final image = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      if (image == null) return;
+
+      await StudentProfile.instance.savePhoto(await image.readAsBytes());
+      if (mounted) {
+        AppSnackBar.show(context, 'Foto profil berhasil diperbarui');
+      }
+    } on PlatformException catch (error) {
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          'Galeri tidak dapat dibuka: ${error.message ?? error.code}',
+          isError: true,
+        );
+      }
+    } on Exception catch (error) {
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          'Foto profil gagal disimpan: $error',
+          isError: true,
+        );
+      }
+    }
   }
 
   @override
@@ -49,11 +124,16 @@ class _ProfilScreenState extends State<ProfilScreen> {
       child: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const AppHeader(title: 'M-Class', subtitle: 'Profil'),
+              AppHeader(
+                title: 'M-Class',
+                subtitle: 'Profil',
+                onBack: widget.onBackToHome,
+                notificationFromTabIndex: 4,
+              ),
               const SizedBox(height: 16),
               _buildTitleBar(),
               const SizedBox(height: 16),
@@ -89,42 +169,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
               SizedBox(height: 2),
               Text(
                 'Kelola data identitas dan kehadiran',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
             ],
-          ),
-        ),
-        GestureDetector(
-          onTap: _handleSave,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  AppColors.buttonGradientStart,
-                  AppColors.buttonGradientEnd,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.check, color: Colors.white, size: 14),
-                SizedBox(width: 6),
-                Text(
-                  'Simpan',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ],
@@ -137,22 +184,34 @@ class _ProfilScreenState extends State<ProfilScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              image: DecorationImage(
-                image: NetworkImage('https://i.pravatar.cc/150?img=47'),
-                fit: BoxFit.cover,
+          Stack(
+            children: [
+              ProfileAvatar(
+                size: 64,
+                borderColor: AppColors.primarySoft,
+                borderWidth: 2,
               ),
-            ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Material(
+                  color: AppColors.primary,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: _changeProfilePhoto,
+                    customBorder: const CircleBorder(),
+                    child: const Padding(
+                      padding: EdgeInsets.all(5),
+                      child: Icon(Icons.edit, color: Colors.white, size: 13),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -163,7 +222,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
+                        horizontal: 10,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primarySoft,
                         borderRadius: BorderRadius.circular(20),
@@ -180,7 +241,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
+                        horizontal: 10,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(20),
@@ -197,8 +260,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Yasmine Shavira',
+                Text(
+                  StudentProfile.instance.name,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -206,8 +269,8 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'NISN: 0064892104',
+                Text(
+                  'NISN: ${StudentProfile.instance.nisn}',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -227,9 +290,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +309,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primarySoft,
                   borderRadius: BorderRadius.circular(20),
@@ -284,14 +347,18 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
           // Kelas dropdown + Nomor absen
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: _dropdownField(
                   label: 'Kelas',
                   value: _selectedKelas,
                   items: _kelasOptions,
-                  onChanged: (v) =>
-                      setState(() => _selectedKelas = v!),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _selectedKelas = value);
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 10),
@@ -300,6 +367,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   label: 'Nomor Absen',
                   controller: _nomorAbsenController,
                   keyboardType: TextInputType.number,
+                  numericOnly: true,
                 ),
               ),
             ],
@@ -311,13 +379,16 @@ class _ProfilScreenState extends State<ProfilScreen> {
             controller: _waController,
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
+            numericOnly: true,
           ),
           const SizedBox(height: 16),
 
           _inputField(
-            label: 'Kontak Orang Tua / Wali Siswa',
+            label: 'Nomor Telepon Orang Tua / Wali',
             controller: _kontakWaliController,
-            icon: Icons.person_outline,
+            icon: Icons.phone_outlined,
+            keyboardType: TextInputType.phone,
+            numericOnly: true,
           ),
           const SizedBox(height: 16),
 
@@ -338,7 +409,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
     IconData? icon,
     TextInputType? keyboardType,
     int maxLines = 1,
+    bool numericOnly = false,
   }) {
+    final hasInvalidNumber = numericOnly && !_isNumeric(controller);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -356,7 +429,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
           decoration: BoxDecoration(
             color: AppColors.inputFill,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.inputBorder),
+            border: Border.all(
+              color: hasInvalidNumber ? AppColors.error : AppColors.inputBorder,
+            ),
           ),
           child: Row(
             children: [
@@ -369,6 +444,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   controller: controller,
                   keyboardType: keyboardType,
                   maxLines: maxLines,
+                  onChanged: numericOnly ? (_) => setState(() {}) : null,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -384,6 +460,17 @@ class _ProfilScreenState extends State<ProfilScreen> {
             ],
           ),
         ),
+        if (hasInvalidNumber) ...[
+          const SizedBox(height: 5),
+          const Text(
+            'Harus diisi angka.',
+            style: TextStyle(
+              color: AppColors.error,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -407,25 +494,58 @@ class _ProfilScreenState extends State<ProfilScreen> {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
           decoration: BoxDecoration(
-            color: AppColors.inputFill,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.inputBorder),
+            gradient: const LinearGradient(
+              colors: [Colors.white, AppColors.inputFill],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
               isExpanded: true,
-              icon: const Icon(Icons.keyboard_arrow_down,
-                  color: AppColors.primary, size: 18),
+              borderRadius: BorderRadius.circular(16),
+              dropdownColor: Colors.white,
+              menuMaxHeight: 240,
+              elevation: 8,
+              icon: const Icon(
+                Icons.expand_more_rounded,
+                color: AppColors.primary,
+                size: 22,
+              ),
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
               ),
               items: items.map((e) {
-                return DropdownMenuItem(value: e, child: Text(e));
+                return DropdownMenuItem(
+                  value: e,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.school_outlined,
+                        size: 17,
+                        color: e == value
+                            ? AppColors.primary
+                            : AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 10),
+                      Text('Kelas $e'),
+                    ],
+                  ),
+                );
               }).toList(),
               onChanged: onChanged,
             ),
@@ -435,10 +555,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
     );
   }
 
-  Widget _readonlyField({
-    required String label,
-    required String value,
-  }) {
+  Widget _readonlyField({required String label, required String value}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -452,16 +569,18 @@ class _ProfilScreenState extends State<ProfilScreen> {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 14, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
             color: AppColors.inputFill,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
             children: [
-              const Icon(Icons.badge_outlined,
-                  size: 16, color: AppColors.primary),
+              const Icon(
+                Icons.badge_outlined,
+                size: 16,
+                color: AppColors.primary,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -473,8 +592,7 @@ class _ProfilScreenState extends State<ProfilScreen> {
                   ),
                 ),
               ),
-              const Icon(Icons.verified,
-                  size: 16, color: AppColors.primary),
+              const Icon(Icons.verified, size: 16, color: AppColors.primary),
             ],
           ),
         ),

@@ -1,9 +1,28 @@
 import 'package:flutter/material.dart';
+
+import '../../models/student_profile.dart';
 import '../../utils/colors.dart';
+import '../../utils/leave_attachment.dart';
 import '../../widgets/blur_background.dart';
+import '../../widgets/profile_avatar.dart';
 
 class SuratIzinBerhasilScreen extends StatelessWidget {
-  const SuratIzinBerhasilScreen({super.key});
+  const SuratIzinBerhasilScreen({
+    super.key,
+    required this.kategori,
+    required this.tanggalDari,
+    required this.tanggalSampai,
+    required this.alasan,
+    required this.namaLampiran,
+    required this.ukuranLampiranBytes,
+  });
+
+  final String kategori;
+  final DateTime tanggalDari;
+  final DateTime tanggalSampai;
+  final String alasan;
+  final String namaLampiran;
+  final int ukuranLampiranBytes;
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +44,18 @@ class SuratIzinBerhasilScreen extends StatelessWidget {
                 const SizedBox(height: 14),
                 const _TrackerCard(),
                 const SizedBox(height: 14),
-                const _DetailCard(),
+                _DetailCard(
+                  kategori: kategori,
+                  tanggalDari: tanggalDari,
+                  tanggalSampai: tanggalSampai,
+                  alasan: alasan,
+                  namaLampiran: namaLampiran,
+                  ukuranLampiranBytes: ukuranLampiranBytes,
+                ),
                 const SizedBox(height: 14),
                 _buildPrimaryButton(
                   context,
-                  'Lihat Riwayat Izin',
+                  'Kembali ke Formulir',
                   filled: true,
                 ),
                 const SizedBox(height: 10),
@@ -46,14 +72,17 @@ class SuratIzinBerhasilScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPrimaryButton(BuildContext context, String text,
-      {required bool filled}) {
+  Widget _buildPrimaryButton(
+    BuildContext context,
+    String text, {
+    required bool filled,
+  }) {
     return GestureDetector(
       onTap: () {
         if (text == 'Kembali ke Beranda') {
           Navigator.of(context).popUntil((route) => route.isFirst);
         } else {
-          // nanti navigate ke riwayat izin
+          Navigator.of(context).pop();
         }
       },
       child: Container(
@@ -123,30 +152,23 @@ class _Header extends StatelessWidget {
             ),
             Text(
               'Beranda',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-              ),
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         ),
         const Spacer(),
         IconButton(
           onPressed: () {},
-          icon: const Icon(Icons.notifications_none,
-              color: AppColors.primary, size: 24),
-        ),
-        Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.primary, width: 1.5),
-            image: const DecorationImage(
-              image: NetworkImage('https://i.pravatar.cc/150?img=47'),
-              fit: BoxFit.cover,
-            ),
+          icon: const Icon(
+            Icons.notifications_none,
+            color: AppColors.primary,
+            size: 24,
           ),
+        ),
+        const ProfileAvatar(
+          size: 36,
+          borderColor: AppColors.primary,
+          borderWidth: 1.5,
         ),
       ],
     );
@@ -158,6 +180,8 @@ class _StudentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final student = StudentProfile.instance;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -169,16 +193,10 @@ class _StudentCard extends StatelessWidget {
         children: [
           Stack(
             children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: NetworkImage('https://i.pravatar.cc/150?img=47'),
-                    fit: BoxFit.cover,
-                  ),
-                ),
+              const ProfileAvatar(
+                size: 56,
+                borderColor: AppColors.primarySoft,
+                borderWidth: 1,
               ),
               Positioned(
                 bottom: 0,
@@ -189,8 +207,11 @@ class _StudentCard extends StatelessWidget {
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.verified,
-                      color: AppColors.primary, size: 14),
+                  child: const Icon(
+                    Icons.verified,
+                    color: AppColors.primary,
+                    size: 14,
+                  ),
                 ),
               ),
             ],
@@ -204,7 +225,9 @@ class _StudentCard extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
+                        horizontal: 10,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primarySoft,
                         borderRadius: BorderRadius.circular(20),
@@ -221,13 +244,15 @@ class _StudentCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 3),
+                        horizontal: 10,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.primary,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        '7C',
+                      child: Text(
+                        student.grade,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w700,
@@ -238,8 +263,8 @@ class _StudentCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                const Text(
-                  'Yasmine Shavira',
+                Text(
+                  student.name,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
@@ -247,8 +272,8 @@ class _StudentCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'NISN: 0064892104',
+                Text(
+                  'NISN: ${student.nisn}',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -298,13 +323,11 @@ class _SuccessCard extends StatelessWidget {
                 width: 2,
               ),
             ),
-            child: const Icon(Icons.check,
-                color: Colors.white, size: 34),
+            child: const Icon(Icons.check, color: Colors.white, size: 34),
           ),
           const SizedBox(height: 14),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
@@ -312,11 +335,10 @@ class _SuccessCard extends StatelessWidget {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.access_time,
-                    color: Colors.white, size: 12),
+                Icon(Icons.info_outline, color: Colors.white, size: 12),
                 SizedBox(width: 6),
                 Text(
-                  'Menunggu Verifikasi Wali Kelas',
+                  'Pratinjau di perangkat',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -328,7 +350,7 @@ class _SuccessCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Permohonan Izin Terkirim!',
+            'Rincian Pengajuan Siap',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w900,
@@ -337,18 +359,13 @@ class _SuccessCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Surat permohonan izin Anda telah masuk ke sistem dan sedang menunggu persetujuan resmi sekolah.',
+            'Data pada halaman ini mengikuti isian formulir. Pengajuan belum dikirim ke sekolah karena backend belum terhubung.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.white70,
-              height: 1.5,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.white70, height: 1.5),
           ),
           const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(14),
@@ -360,7 +377,7 @@ class _SuccessCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'ID REFERENSI TIKET',
+                        'STATUS PENGAJUAN',
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -370,32 +387,10 @@ class _SuccessCard extends StatelessWidget {
                       ),
                       SizedBox(height: 3),
                       Text(
-                        '#IZN-20240328-7C028',
+                        'Belum dikirim ke server',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 12,
                           fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.copy, color: Colors.white, size: 12),
-                      SizedBox(width: 5),
-                      Text(
-                        'Salin',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
                           color: Colors.white,
                         ),
                       ),
@@ -438,19 +433,11 @@ class _TrackerCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               const Text(
-                'Status Pelacakan Surat',
+                'Alur Pengajuan',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              const Text(
-                'Auto-refresh 5m',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textSecondary,
                 ),
               ),
             ],
@@ -461,22 +448,20 @@ class _TrackerCard extends StatelessWidget {
             isDone: true,
             isCurrent: false,
             isLast: false,
-            title: 'Permohonan Izin Dikirim',
-            subtitle:
-                'Surat dan dokumen pendukung berhasil diunggah siswa.',
-            badge: '28 Mar, 08:30 WIB',
+            title: 'Formulir selesai diisi',
+            subtitle: 'Data isian dan berkas ditampilkan pada ringkasan.',
+            badge: 'Selesai',
             badgeColor: AppColors.primary,
             badgeTextColor: Colors.white,
           ),
           _step(
             number: 2,
-            isDone: true,
+            isDone: false,
             isCurrent: true,
             isLast: false,
-            title: 'Verifikasi Wali Kelas 7C',
-            subtitle:
-                'Dra. Siti Aminah, M.Pd.\nEstimasi validasi berkas dalam 1-2 jam kerja.',
-            badge: 'Sedang Diproses',
+            title: 'Kirim ke server sekolah',
+            subtitle: 'Belum dapat dilakukan. Integrasi backend diperlukan untuk menyimpan dan mengirim pengajuan.',
+            badge: 'Belum tersedia',
             badgeColor: AppColors.izinBg,
             badgeTextColor: const Color(0xFF8B5A0F),
           ),
@@ -484,19 +469,9 @@ class _TrackerCard extends StatelessWidget {
             number: 3,
             isDone: false,
             isCurrent: false,
-            isLast: false,
-            title: 'Persetujuan Koordinator BK',
-            subtitle:
-                'Sinkronisasi data kehadiran dengan sistem absensi sekolah.',
-          ),
-          _step(
-            number: 4,
-            isDone: false,
-            isCurrent: false,
             isLast: true,
-            title: 'Presensi & Rekap Diperbarui',
-            subtitle:
-                "Status kehadiran otomatis tercatat 'Sakit' pada e-Rapor.",
+            title: 'Verifikasi oleh pihak sekolah',
+            subtitle: 'Tahap ini tersedia setelah pengajuan diterima server.',
           ),
         ],
       ),
@@ -540,8 +515,7 @@ class _TrackerCard extends StatelessWidget {
                 ),
                 child: Center(
                   child: isDone
-                      ? const Icon(Icons.check,
-                          color: Colors.white, size: 16)
+                      ? const Icon(Icons.check, color: Colors.white, size: 16)
                       : Text(
                           '$number',
                           style: TextStyle(
@@ -589,7 +563,9 @@ class _TrackerCard extends StatelessWidget {
                       if (badge != null)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 3),
+                            horizontal: 10,
+                            vertical: 3,
+                          ),
                           decoration: BoxDecoration(
                             color: badgeColor,
                             borderRadius: BorderRadius.circular(20),
@@ -627,10 +603,29 @@ class _TrackerCard extends StatelessWidget {
 }
 
 class _DetailCard extends StatelessWidget {
-  const _DetailCard();
+  const _DetailCard({
+    required this.kategori,
+    required this.tanggalDari,
+    required this.tanggalSampai,
+    required this.alasan,
+    required this.namaLampiran,
+    required this.ukuranLampiranBytes,
+  });
+
+  final String kategori;
+  final DateTime tanggalDari;
+  final DateTime tanggalSampai;
+  final String alasan;
+  final String namaLampiran;
+  final int ukuranLampiranBytes;
 
   @override
   Widget build(BuildContext context) {
+    final student = StudentProfile.instance;
+    final extension = namaLampiran.split('.').last.toUpperCase();
+    final durationDays = tanggalSampai.difference(tanggalDari).inDays + 1;
+    final isImage = {'JPG', 'JPEG', 'PNG'}.contains(extension);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -649,8 +644,11 @@ class _DetailCard extends StatelessWidget {
                   color: AppColors.primarySoft,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.description_outlined,
-                    color: AppColors.primary, size: 18),
+                child: const Icon(
+                  Icons.description_outlined,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -667,7 +665,7 @@ class _DetailCard extends StatelessWidget {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Data tersimpan secara permanen',
+                      'Ringkasan isian • belum dikirim ke server',
                       style: TextStyle(
                         fontSize: 10,
                         color: AppColors.textSecondary,
@@ -678,7 +676,9 @@ class _DetailCard extends StatelessWidget {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 6),
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primarySoft,
                   borderRadius: BorderRadius.circular(10),
@@ -707,16 +707,10 @@ class _DetailCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: DecorationImage(
-                      image: NetworkImage('https://i.pravatar.cc/150?img=47'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                const ProfileAvatar(
+                  size: 44,
+                  borderColor: AppColors.primarySoft,
+                  borderWidth: 1,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -725,8 +719,8 @@ class _DetailCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Text(
-                            'Yasmine Shavira',
+                          Text(
+                            student.name,
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
@@ -736,13 +730,15 @@ class _DetailCard extends StatelessWidget {
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: AppColors.primary,
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text(
-                              '7C',
+                            child: Text(
+                              student.grade,
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.w800,
@@ -753,8 +749,8 @@ class _DetailCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 3),
-                      const Text(
-                        'NISN: 0064892104 • Siswa Aktif',
+                      Text(
+                        'NISN: ${student.nisn} • Siswa Aktif',
                         style: TextStyle(
                           fontSize: 11,
                           color: AppColors.textSecondary,
@@ -774,7 +770,7 @@ class _DetailCard extends StatelessWidget {
               Expanded(
                 child: _infoTile(
                   label: 'KATEGORI IZIN',
-                  value: 'Sakit',
+                  value: kategori,
                   icon: Icons.medical_services_outlined,
                 ),
               ),
@@ -782,7 +778,7 @@ class _DetailCard extends StatelessWidget {
               Expanded(
                 child: _infoTile(
                   label: 'DURASI ABSEN',
-                  value: '2 Hari Kerja',
+                  value: '$durationDays Hari',
                   icon: Icons.schedule,
                 ),
               ),
@@ -792,8 +788,7 @@ class _DetailCard extends StatelessWidget {
 
           // Tanggal
           Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.inputFill,
               borderRadius: BorderRadius.circular(14),
@@ -801,13 +796,15 @@ class _DetailCard extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: _dateCol('Dari Tanggal', '28 Mar 2026'),
+                  child: _dateCol('Dari Tanggal', _formatDate(tanggalDari)),
                 ),
-                Container(
-                    width: 1, height: 36, color: AppColors.inputBorder),
+                Container(width: 1, height: 36, color: AppColors.inputBorder),
                 Expanded(
-                  child: _dateCol('Sampai Tanggal', '29 Mar 2026',
-                      align: CrossAxisAlignment.end),
+                  child: _dateCol(
+                    'Sampai Tanggal',
+                    _formatDate(tanggalSampai),
+                    align: CrossAxisAlignment.end,
+                  ),
                 ),
               ],
             ),
@@ -830,9 +827,9 @@ class _DetailCard extends StatelessWidget {
               color: AppColors.inputFill,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Text(
-              '"Mengalami demam tinggi dan flu, disarankan istirahat penuh oleh dokter klinik selama 2 hari."',
-              style: TextStyle(
+            child: Text(
+              '"$alasan"',
+              style: const TextStyle(
                 fontSize: 12,
                 color: AppColors.textPrimary,
                 height: 1.6,
@@ -855,12 +852,9 @@ class _DetailCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const Text(
-                '1 Berkas (PDF/JPG)',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.textSecondary,
-                ),
+              Text(
+                '1 Berkas ($extension)',
+                style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -871,7 +865,8 @@ class _DetailCard extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3)),
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
@@ -886,16 +881,21 @@ class _DetailCard extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.picture_as_pdf,
-                      color: Colors.white, size: 18),
+                  child: Icon(
+                    isImage ? Icons.image_outlined : Icons.picture_as_pdf,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Surat_Keterangan_Dokter_Klinik',
+                        namaLampiran,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
@@ -904,7 +904,7 @@ class _DetailCard extends StatelessWidget {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        '1.4 MB • Terverifikasi Enkripsi',
+                        '${formatLeaveAttachmentSize(ukuranLampiranBytes)} • Dipilih di perangkat',
                         style: TextStyle(
                           fontSize: 10,
                           color: AppColors.textSecondary,
@@ -914,7 +914,7 @@ class _DetailCard extends StatelessWidget {
                   ),
                 ),
                 const Text(
-                  'Pratinjau',
+                  'Terpilih',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
@@ -924,63 +924,27 @@ class _DetailCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                  color: AppColors.primary.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AppColors.buttonGradientStart,
-                        AppColors.buttonGradientEnd,
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.chat_bubble_outline,
-                      color: Colors.white, size: 18),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'WhatsApp Wali Murid Terhubung',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        '0812-3456-7890 (Ibu Hendriani)',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.verified,
-                    color: AppColors.primary, size: 20),
-              ],
-            ),
-          ),
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   Widget _infoTile({
@@ -993,8 +957,7 @@ class _DetailCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.25)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1052,16 +1015,16 @@ class _DetailCard extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
         ),
         const SizedBox(height: 4),
         Row(
           children: [
-            const Icon(Icons.calendar_today_outlined,
-                size: 12, color: AppColors.primary),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 12,
+              color: AppColors.primary,
+            ),
             const SizedBox(width: 6),
             Text(
               date,

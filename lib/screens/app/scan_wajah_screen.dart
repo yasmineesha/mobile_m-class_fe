@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+
 import '../../utils/colors.dart';
 import '../../widgets/app_snackbar.dart';
+import 'tinjau_foto_wajah_screen.dart';
 
 class ScanWajahScreen extends StatefulWidget {
   const ScanWajahScreen({super.key});
@@ -10,7 +12,8 @@ class ScanWajahScreen extends StatefulWidget {
   State<ScanWajahScreen> createState() => _ScanWajahScreenState();
 }
 
-class _ScanWajahScreenState extends State<ScanWajahScreen> {
+class _ScanWajahScreenState extends State<ScanWajahScreen>
+    with WidgetsBindingObserver {
   CameraController? _controller;
   bool _isCameraInitialized = false;
   bool _isCapturing = false;
@@ -19,7 +22,29 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    if (state == AppLifecycleState.inactive) {
+      controller.dispose();
+      _controller = null;
+      if (mounted) setState(() => _isCameraInitialized = false);
+    } else if (state == AppLifecycleState.resumed) {
+      _initializeCamera();
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -35,9 +60,7 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
 
     try {
       final cameras = await availableCameras();
-      if (cameras.isEmpty) {
-        throw StateError('Tidak ada kamera yang tersedia di perangkat ini.');
-      }
+      if (cameras.isEmpty) throw StateError('Tidak ada kamera.');
 
       final camera = cameras.firstWhere(
         (camera) => camera.lensDirection == CameraLensDirection.front,
@@ -46,7 +69,7 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
 
       final controller = CameraController(
         camera,
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: false,
       );
 
@@ -65,31 +88,41 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
   Future<void> _takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized || _isCapturing) return;
+    if (_controller == null ||
+        !_controller!.value.isInitialized ||
+        _isCapturing) {
+      return;
+    }
 
     setState(() => _isCapturing = true);
-    
+
     try {
-      await _controller!.takePicture();
-      
-      // Di sini nanti kamu bisa kirim 'image' ke backend/AI.
-      // Untuk sekarang kita simulasi berhasil:
-      await Future.delayed(const Duration(milliseconds: 800)); // Simulasi loading AI
-      
+      final image = await _controller!.takePicture();
+      final imageBytes = await image.readAsBytes();
+
+      await _controller?.dispose();
+      _controller = null;
+
       if (!mounted) return;
-      Navigator.pop(context); // Kembali ke dashboard setelah scan
-      AppSnackBar.show(context, 'Wajah terverifikasi! Absensi berhasil.');
-      
+
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => TinjauFotoWajahScreen(imageBytes: imageBytes),
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _isCapturing = false;
+          _isCameraInitialized = false;
+        });
+        _initializeCamera();
+      }
     } catch (e) {
-      AppSnackBar.show(context, 'Gagal mengambil foto', isError: true);
       if (!mounted) return;
+      AppSnackBar.show(context, 'Gagal mengambil foto: $e', isError: true);
       setState(() => _isCapturing = false);
     }
   }
@@ -101,7 +134,7 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // ==== KAMERA PREVIEW ====
+            // ==== KAMERA PREVIEW (DIPERBAIKI AGAR TIDAK DESKOT) ====
             if (_cameraError != null)
               Center(
                 child: Padding(
@@ -130,10 +163,12 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
                 ),
               )
             else if (_isCameraInitialized && _controller != null)
-              SizedBox(
-                width: double.infinity,
-                height: double.infinity,
-                child: CameraPreview(_controller!),
+              Center(
+                child: AspectRatio(
+                  // Kunci rasio 3:4 (Standar Portrait HP)
+                  aspectRatio: 3 / 4,
+                  child: CameraPreview(_controller!),
+                ),
               )
             else
               const Center(
@@ -143,8 +178,8 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
             // ==== OVERLAY LINGKARAN WAJAH ====
             Center(
               child: Container(
-                width: 260,
-                height: 320,
+                width: 280,
+                height: 360,
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.primary, width: 3),
                   borderRadius: BorderRadius.circular(160),
@@ -170,19 +205,27 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.black54,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: const Text(
-                      'Posisikan wajah di dalam lingkaran',
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                      'Pastikan wajah tidak terhalang (lepas masker/kacamata)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
                   GestureDetector(
-                    onTap: _takePicture,
+                    onTap: _isCameraInitialized ? _takePicture : null,
                     child: Container(
                       width: 76,
                       height: 76,
@@ -193,12 +236,18 @@ class _ScanWajahScreenState extends State<ScanWajahScreen> {
                       child: Container(
                         margin: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: _isCapturing ? Colors.grey : AppColors.primary,
+                          color: _isCameraInitialized
+                              ? AppColors.primary
+                              : Colors.grey,
                           shape: BoxShape.circle,
                         ),
-                        child: _isCapturing 
-                          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                          : null,
+                        child: _isCapturing
+                            ? const Center(
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                ),
+                              )
+                            : null,
                       ),
                     ),
                   ),

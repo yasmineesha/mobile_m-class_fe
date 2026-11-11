@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../utils/colors.dart';
 import '../widgets/blur_background.dart';
 import 'onboarding_screen.dart'; // Import halaman baru
@@ -14,10 +16,11 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _planeFade;
-  late Animation<double> _planeSlide;
+  late AnimationController _loadingController;
   late Animation<double> _logoScale;
   late Animation<double> _textFade;
+  late Animation<double> _loadingProgress;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -25,43 +28,34 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3500), // Total waktu animasi
+      duration: const Duration(milliseconds: 2200),
     );
 
-    // Fase 1: Pesawat terbang (0.0 - 0.4)
-    _planeFade = TweenSequence([
-      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 20),
-      TweenSequenceItem(tween: ConstantTween(1.0), weight: 40),
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 40),
-    ]).animate(_controller);
+    _logoScale = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.elasticOut));
 
-    _planeSlide = Tween<double>(begin: -200, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.4, curve: Curves.easeOutCubic),
-      ),
-    );
-
-    // Fase 2: Logo M-Class muncul (0.4 - 0.7)
-    _logoScale = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.4, 0.7, curve: Curves.elasticOut),
-      ),
-    );
-
-    // Fase 3: Teks muncul (0.7 - 1.0)
     _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.7, 1.0, curve: Curves.easeIn),
+        curve: const Interval(0.25, 0.65, curve: Curves.easeIn),
       ),
     );
 
     _controller.forward();
 
-    // Pindah ke Onboarding setelah animasi selesai + jeda
-    Timer(const Duration(milliseconds: 4000), () {
+    _loadingController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
+    );
+    _loadingProgress = CurvedAnimation(
+      parent: _loadingController,
+      curve: Curves.easeInOut,
+    );
+    _loadingController.forward();
+
+    _navigationTimer = Timer(const Duration(milliseconds: 4500), () {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
@@ -77,7 +71,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _controller.dispose();
+    _loadingController.dispose();
     super.dispose();
   }
 
@@ -90,33 +86,16 @@ class _SplashScreenState extends State<SplashScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // ==== AREA ANIMASI ====
               SizedBox(
-                height: 150,
+                height: 190,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // 1. Animasi Pesawat
-                    FadeTransition(
-                      opacity: _planeFade,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, -2),
-                          end: Offset.zero,
-                        ).animate(_planeSlide),
-                        child: const Icon(
-                          Icons.flight_takeoff_rounded,
-                          size: 80,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                    // 2. Animasi Logo M-Class (Kotak Putih + Ikon Sekolah)
                     ScaleTransition(
                       scale: _logoScale,
                       child: Container(
-                        width: 100,
-                        height: 100,
+                        width: 140,
+                        height: 140,
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(28),
@@ -131,9 +110,9 @@ class _SplashScreenState extends State<SplashScreen>
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
-                            'assets/images/logo m-class.png',
-                            width: 60,
-                            height: 60,
+                            'lib/assets/images/logo m-class.png',
+                            width: 112,
+                            height: 112,
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -143,8 +122,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
               const SizedBox(height: 20),
-              
-              // ==== TEKS M-CLASS ====
+
               FadeTransition(
                 opacity: _textFade,
                 child: const Column(
@@ -166,6 +144,54 @@ class _SplashScreenState extends State<SplashScreen>
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
                       ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 42),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 36),
+                child: Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: AnimatedBuilder(
+                        animation: _loadingProgress,
+                        builder: (context, _) => ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: LinearProgressIndicator(
+                            value: _loadingProgress.value,
+                            minHeight: 11,
+                            backgroundColor: const Color(0xFFDCE3FF),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.sync_rounded,
+                          color: AppColors.primary,
+                          size: 22,
+                        ),
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Menyiapkan sesi belajar...',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

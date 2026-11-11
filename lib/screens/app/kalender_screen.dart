@@ -1,33 +1,64 @@
 import 'package:flutter/material.dart';
+
 import '../../utils/colors.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/blur_background.dart';
 import 'detail/pengumuman_detail_screen.dart';
 
 class KalenderScreen extends StatefulWidget {
-  const KalenderScreen({super.key});
+  const KalenderScreen({super.key, this.onBackToHome});
+
+  final VoidCallback? onBackToHome;
 
   @override
   State<KalenderScreen> createState() => _KalenderScreenState();
 }
 
 class _KalenderScreenState extends State<KalenderScreen> {
-  static const int _baseYear = 2026;
-  static const int _baseMonth = 3;
-  int _monthOffset = 0;
+  // Menggunakan DateTime sekarang (Real-time)
+  late DateTime _currentDate;
+  final DateTime _today = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    // Set bulan awal ke bulan saat ini
+    _currentDate = DateTime(_today.year, _today.month);
+  }
 
   static const _monthNames = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
   ];
 
-  DateTime get _currentDate => DateTime(_baseYear, _baseMonth + _monthOffset);
-  String get _monthLabel => '${_monthNames[_currentDate.month - 1]} ${_currentDate.year}';
-  int get _daysInMonth => DateTime(_currentDate.year, _currentDate.month + 1, 0).day;
-  int get _firstWeekday => DateTime(_currentDate.year, _currentDate.month, 1).weekday;
+  String get _monthLabel =>
+      '${_monthNames[_currentDate.month - 1]} ${_currentDate.year}';
+  int get _daysInMonth =>
+      DateTime(_currentDate.year, _currentDate.month + 1, 0).day;
+  int get _firstWeekday =>
+      DateTime(_currentDate.year, _currentDate.month, 1).weekday;
 
-  void _prevMonth() => setState(() => _monthOffset--);
-  void _nextMonth() => setState(() => _monthOffset++);
+  void _prevMonth() {
+    setState(() {
+      _currentDate = DateTime(_currentDate.year, _currentDate.month - 1);
+    });
+  }
+
+  void _nextMonth() {
+    setState(() {
+      _currentDate = DateTime(_currentDate.year, _currentDate.month + 1);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,11 +66,16 @@ class _KalenderScreenState extends State<KalenderScreen> {
       child: SafeArea(
         bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 110),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 110),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const AppHeader(title: 'M-Class', subtitle: 'Kalender'),
+              AppHeader(
+                title: 'M-Class',
+                subtitle: 'Kalender',
+                onBack: widget.onBackToHome,
+                notificationFromTabIndex: 2,
+              ),
               const SizedBox(height: 14),
               _buildMonthSwitcher(),
               const SizedBox(height: 14),
@@ -73,24 +109,40 @@ class _KalenderScreenState extends State<KalenderScreen> {
         children: [
           IconButton(
             onPressed: _prevMonth,
-            icon: const Icon(Icons.chevron_left, color: AppColors.primary, size: 24),
+            icon: const Icon(
+              Icons.chevron_left,
+              color: AppColors.primary,
+              size: 24,
+            ),
           ),
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.calendar_month, color: AppColors.primary, size: 20),
+                const Icon(
+                  Icons.calendar_month,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   _monthLabel,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
             onPressed: _nextMonth,
-            icon: const Icon(Icons.chevron_right, color: AppColors.primary, size: 24),
+            icon: const Icon(
+              Icons.chevron_right,
+              color: AppColors.primary,
+              size: 24,
+            ),
           ),
         ],
       ),
@@ -100,13 +152,26 @@ class _KalenderScreenState extends State<KalenderScreen> {
   Widget _buildStatRow() {
     return Row(
       children: [
-        Expanded(child: _statPill('20', 'Hadir', AppColors.hadirBg, AppColors.hadir)),
+        Expanded(
+          child: _statPill('20', 'Hadir', AppColors.hadirBg, AppColors.hadir),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: _statPill('2', 'Izin/Sakit', AppColors.izinBg, const Color(0xFF8B5A0F))),
+        Expanded(
+          child: _statPill(
+            '2',
+            'Izin/Sakit',
+            AppColors.izinBg,
+            const Color(0xFF8B5A0F),
+          ),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: _statPill('3', 'Libur', AppColors.liburBg, AppColors.libur)),
+        Expanded(
+          child: _statPill('3', 'Libur', AppColors.liburBg, AppColors.libur),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: _statPill('0', 'Agenda', AppColors.hadirBg, AppColors.hadir)),
+        Expanded(
+          child: _statPill('0', 'Agenda', AppColors.hadirBg, AppColors.hadir),
+        ),
       ],
     );
   }
@@ -114,12 +179,31 @@ class _KalenderScreenState extends State<KalenderScreen> {
   Widget _statPill(String value, String label, Color bg, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: Column(
         children: [
-          Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color, height: 1)),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: color,
+              height: 1,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color.withValues(alpha: 0.8))),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color.withValues(alpha: 0.8),
+            ),
+          ),
         ],
       ),
     );
@@ -147,18 +231,22 @@ class _KalenderScreenState extends State<KalenderScreen> {
         children: [
           Row(
             children: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
-                .map((d) => Expanded(
-                      child: Center(
-                        child: Text(
-                          d,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: (d == 'Sab' || d == 'Min') ? AppColors.libur : AppColors.textPrimary,
-                          ),
+                .map(
+                  (d) => Expanded(
+                    child: Center(
+                      child: Text(
+                        d,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: (d == 'Sab' || d == 'Min')
+                              ? AppColors.libur
+                              : AppColors.textPrimary,
                         ),
                       ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 10),
@@ -169,7 +257,9 @@ class _KalenderScreenState extends State<KalenderScreen> {
                 children: List.generate(7, (col) {
                   final cellIndex = row * 7 + col;
                   final day = cellIndex - leadingEmpty + 1;
-                  if (day < 1 || day > _daysInMonth) return const Expanded(child: SizedBox(height: 40));
+                  if (day < 1 || day > _daysInMonth) {
+                    return const Expanded(child: SizedBox(height: 40));
+                  }
                   return Expanded(child: _buildDayCell(day));
                 }),
               ),
@@ -178,7 +268,10 @@ class _KalenderScreenState extends State<KalenderScreen> {
           const SizedBox(height: 10),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: AppColors.inputFill,
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Wrap(
               spacing: 14,
               runSpacing: 8,
@@ -196,18 +289,18 @@ class _KalenderScreenState extends State<KalenderScreen> {
   }
 
   Widget _buildDayCell(int day) {
-    final isToday = _monthOffset == 0 && day == 24;
+    // Cek apakah ini hari ini (berdasarkan real-time)
+    final isToday =
+        _currentDate.year == _today.year &&
+        _currentDate.month == _today.month &&
+        day == _today.day;
+
     final weekdayCol = (day + _firstWeekday - 2) % 7;
     final isWeekend = weekdayCol == 5 || weekdayCol == 6;
 
-    Color? dotColor;
-    if (isWeekend) {
-      dotColor = AppColors.libur;
-    } else if (day % 7 == 0 || day % 11 == 0) {
-      dotColor = AppColors.izin;
-    } else if (day <= 24) {
-      dotColor = AppColors.hadir;
-    }
+    final Color dotColor = isWeekend
+        ? AppColors.libur
+        : (day % 7 == 0 || day % 11 == 0 ? AppColors.izin : AppColors.hadir);
 
     return Container(
       height: 40,
@@ -224,7 +317,11 @@ class _KalenderScreenState extends State<KalenderScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-              color: isToday ? Colors.white : isWeekend ? AppColors.libur : AppColors.textPrimary,
+              color: isToday
+                  ? Colors.white
+                  : isWeekend
+                  ? AppColors.libur
+                  : AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 2),
@@ -233,7 +330,7 @@ class _KalenderScreenState extends State<KalenderScreen> {
             height: 5,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: dotColor == null ? Colors.transparent : isToday ? Colors.white : dotColor,
+              color: isToday ? Colors.white : dotColor,
             ),
           ),
         ],
@@ -245,9 +342,20 @@ class _KalenderScreenState extends State<KalenderScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: color)),
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+        ),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -258,19 +366,42 @@ class _KalenderScreenState extends State<KalenderScreen> {
       children: [
         Row(
           children: [
-            const Icon(Icons.campaign_outlined, size: 20, color: AppColors.primary),
+            const Icon(
+              Icons.campaign_outlined,
+              size: 20,
+              color: AppColors.primary,
+            ),
             const SizedBox(width: 8),
             const Expanded(
-              child: Text('Pengumuman Sekolah', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+              child: Text(
+                'Pengumuman Sekolah',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-              child: const Text('3 Pengumuman Baru', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.primary)),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                '3 Pengumuman Baru',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
             ),
           ],
         ),
         const SizedBox(height: 12),
+
+        // Pengumuman 1
         _buildPengumumanCard(
           context,
           tag: 'Libur Nasional',
@@ -279,10 +410,12 @@ class _KalenderScreenState extends State<KalenderScreen> {
           date: '22 Mar 2026',
           title: 'Libur Bersama Awal Ramadhan 1446 H',
           subtitle: 'Pelaksanaan: 29 - 31 Maret 2026',
-          body: 'Seluruh kegiatan belajar mengajar tatap muka ditiadakan. Siswa diimbau memanfaatkan waktu...',
+          body: 'Seluruh kegiatan belajar mengajar tatap muka ditiadakan. Siswa diimbau memanfaatkan waktu untuk belajar mandiri di rumah masing-masing.',
           source: 'Kesiswaan & Kurikulum',
         ),
         const SizedBox(height: 12),
+
+        // Pengumuman 2
         _buildPengumumanCard(
           context,
           tag: 'Akademik',
@@ -291,7 +424,7 @@ class _KalenderScreenState extends State<KalenderScreen> {
           date: '20 Mar 2026',
           title: 'Penilaian Tengah Semester (PTS) Genap',
           subtitle: 'Mulai: 10 April 2026',
-          body: 'Syarat Keikutsertaan: Presensi wajib minimal 90% dan bebas tanggungan administrasi.',
+          body: 'Syarat Keikutsertaan: Presensi wajib minimal 90% dan bebas tanggungan administrasi. Jadwal ujian per mata pelajaran dapat diakses melalui portal siswa.',
           source: 'Waka Kurikulum',
         ),
       ],
@@ -343,65 +476,123 @@ class _KalenderScreenState extends State<KalenderScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Baris Tag dan Tanggal
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: tagBg, borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: tagBg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Row(
                     children: [
                       Icon(Icons.campaign_outlined, size: 10, color: tagColor),
                       const SizedBox(width: 4),
-                      Text(tag, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: tagColor)),
+                      Text(
+                        tag,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: tagColor,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const Spacer(),
-                Text(date, style: const TextStyle(fontSize: 11, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                Text(
+                  date,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
-            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary, height: 1.3)),
+
+            // Judul Pengumuman (Tampil di depan)
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+                height: 1.3,
+              ),
+            ),
             const SizedBox(height: 8),
+
+            // Subtitle
             Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 12, color: AppColors.primary),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 12,
+                  color: AppColors.primary,
+                ),
                 const SizedBox(width: 6),
-                Text(subtitle, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
               ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              height: 120,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Color(0xFF3A3A3A), Color(0xFF1A1A1A)]),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: const Center(child: Icon(Icons.image_outlined, color: Colors.white38, size: 40)),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              body,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.5),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 14),
+
+            // Tombol Baca Selengkapnya
             Row(
               children: [
-                const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                const Icon(
+                  Icons.person_outline,
+                  size: 14,
+                  color: AppColors.textSecondary,
+                ),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(source, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w600)),
+                  child: Text(
+                    source,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: const Row(
                     children: [
-                      Text('Baca Selengkapnya', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                      Text(
+                        'Baca Selengkapnya',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
                       SizedBox(width: 4),
-                      Icon(Icons.arrow_forward, size: 12, color: AppColors.primary),
+                      Icon(
+                        Icons.arrow_forward,
+                        size: 12,
+                        color: AppColors.primary,
+                      ),
                     ],
                   ),
                 ),

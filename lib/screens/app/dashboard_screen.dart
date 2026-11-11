@@ -1,9 +1,14 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import '../../models/student_profile.dart';
 import '../../utils/colors.dart';
 import '../../widgets/blur_background.dart';
 import '../../widgets/attendance_reminder_dialog.dart';
-import 'notifikasi_screen.dart';
+import '../../widgets/app_header.dart';
+import '../../widgets/profile_avatar.dart';
+import '../../widgets/school_location_map.dart';
 import 'scan_wajah_screen.dart';
 import 'surat_izin_screen.dart';
 import 'map_picker_screen.dart'; // Import Map Picker yang baru
@@ -17,6 +22,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _reminderShown = false;
+  String _locationStatus = 'Mendeteksi lokasi...';
 
   @override
   void initState() {
@@ -64,27 +70,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Row(
       children: [
         // Avatar
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            image: const DecorationImage(
-              image: NetworkImage('https://i.pravatar.cc/150?img=47'),
-              fit: BoxFit.cover,
-            ),
-          ),
-        ),
+        const ProfileAvatar(size: 44, borderColor: Colors.white),
         const SizedBox(width: 14),
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -97,7 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             Text(
-              'Yasmine Shavira',
+              StudentProfile.instance.name,
               style: TextStyle(
                 fontFamily: 'PlusJakartaSans',
                 fontSize: 18,
@@ -109,49 +97,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         const Spacer(),
-        // Tombol Notifikasi
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const NotifikasiScreen()),
-            );
-          },
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.notifications_none_rounded,
-                    color: AppColors.primary, size: 24),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: AppColors.error,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+        const AppNotificationButton(),
       ],
     );
   }
@@ -176,10 +122,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.badge_outlined, color: AppColors.primary, size: 18),
+              const Icon(
+                Icons.badge_outlined,
+                color: AppColors.primary,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               Text(
-                'NISN: 0064892104',
+                'NISN: ${StudentProfile.instance.nisn}',
                 style: TextStyle(
                   fontFamily: 'PlusJakartaSans',
                   fontSize: 13,
@@ -189,19 +139,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Text(
-              'Kelas 7C',
-              style: TextStyle(
-                fontFamily: 'PlusJakartaSans',
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primary,
+          AnimatedBuilder(
+            animation: StudentProfile.instance,
+            builder: (context, _) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.primarySoft,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Kelas ${StudentProfile.instance.grade}',
+                style: const TextStyle(
+                  fontFamily: 'PlusJakartaSans',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),
@@ -213,15 +166,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // ==================== TIME CARD ====================
   Widget _buildTimeCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1FA87A),
-            Color(0xFF0B6E4F),
-          ],
+          colors: [Color(0xFF1FA87A), Color(0xFF0B6E4F)],
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -237,8 +187,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.access_time_filled_rounded,
-                  color: Colors.white70, size: 18),
+              const Icon(
+                Icons.access_time_filled_rounded,
+                color: Colors.white70,
+                size: 18,
+              ),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text(
@@ -253,7 +206,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 6),
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -270,7 +225,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const Text(
             '06:30',
             style: TextStyle(
@@ -282,10 +237,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               letterSpacing: -2,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.calendar_today_rounded, color: Colors.white70, size: 14),
+              const Icon(
+                Icons.calendar_today_rounded,
+                color: Colors.white70,
+                size: 14,
+              ),
               const SizedBox(width: 6),
               const Expanded(
                 child: Text(
@@ -299,7 +258,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
@@ -307,7 +269,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle, size: 14, color: AppColors.primary),
+                    Icon(
+                      Icons.check_circle,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'Tepat Waktu',
@@ -346,110 +312,89 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(24),
         child: Column(
           children: [
-            // Peta Placeholder (Bisa diklik)
-            Stack(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    // Navigasi ke MapPickerScreen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const MapPickerScreen()),
-                    );
-                  },
-                  child: Container(
-                    height: 130,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFE8F0EA), Color(0xFFD4E5DA)],
+            // Peta lokasi sekolah
+            SizedBox(
+              height: 180,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  SchoolLocationMap(
+                    initialZoom: 16,
+                    onLocationStatusChanged: (status) {
+                      if (mounted && _locationStatus != status) {
+                        setState(() => _locationStatus = status);
+                      }
+                    },
+                  ),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
                         children: [
-                          Icon(Icons.map_rounded,
-                              size: 50,
-                              color: AppColors.primary.withValues(alpha: 0.4)),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Buka Peta',
+                          Icon(
+                            Icons.my_location,
+                            size: 14,
+                            color: AppColors.primary,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Radius sekolah 50m',
                             style: TextStyle(
                               fontFamily: 'PlusJakartaSans',
-                              color: AppColors.primary,
+                              fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              fontSize: 12,
+                              color: AppColors.textPrimary,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-                // Badge Radius
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.my_location, size: 14, color: AppColors.primary),
-                        SizedBox(width: 6),
-                        Text(
-                          'Radius 12m',
-                          style: TextStyle(
-                            fontFamily: 'PlusJakartaSans',
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MapPickerScreen(),
                           ),
+                        );
+                      },
+                      icon: const Icon(Icons.open_in_full_rounded, size: 16),
+                      label: const Text('Buka peta'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.primary,
+                        elevation: 2,
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(
+                          fontFamily: 'PlusJakartaSans',
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Badge Akurasi
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: const Text(
-                      'Akurasi: 3m',
-                      style: TextStyle(
-                        fontFamily: 'PlusJakartaSans',
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             // Info Lokasi
             Padding(
@@ -462,10 +407,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: AppColors.primarySoft,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 20),
+                    child: const Icon(
+                      Icons.location_on_rounded,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -480,7 +429,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Di Dalam Radius Presensi',
+                          _locationStatus,
                           style: TextStyle(
                             fontFamily: 'PlusJakartaSans',
                             fontSize: 11,
@@ -495,10 +444,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const MapPickerScreen()),
+                        MaterialPageRoute(
+                          builder: (_) => const MapPickerScreen(),
+                        ),
                       );
                     },
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+                    icon: const Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ],
               ),
@@ -543,7 +497,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: Colors.white,
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 2),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 2,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.primary.withValues(alpha: 0.1),
@@ -553,8 +510,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
                 child: const Center(
-                  child: Icon(Icons.face_retouching_natural_rounded,
-                      size: 60, color: AppColors.primary),
+                  child: Icon(
+                    Icons.face_retouching_natural_rounded,
+                    size: 60,
+                    color: AppColors.primary,
+                  ),
                 ),
               ),
             ],
@@ -612,7 +572,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.camera_front_rounded, color: Colors.white, size: 22),
+                  Icon(
+                    Icons.camera_front_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                   SizedBox(width: 10),
                   Text(
                     'Scan Wajah Sekarang',
@@ -650,7 +614,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SuratIzinScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const SuratIzinScreen(initialIndex: 1),
+                  ),
                 );
               },
             ),
@@ -668,7 +634,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const SuratIzinScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => const SuratIzinScreen(initialIndex: 0),
+                  ),
                 );
               },
             ),

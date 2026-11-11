@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../utils/colors.dart';
+import 'profile_avatar.dart';
 
 // Menampilkan bottom-sheet konfirmasi logout.
 Future<bool> showLogoutDialog(BuildContext context) async {
@@ -7,7 +9,9 @@ Future<bool> showLogoutDialog(BuildContext context) async {
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: AppColors.primary.withValues(alpha: 0.35),  // ← hijau transparan
+    barrierColor: AppColors.primary.withValues(
+      alpha: 0.35,
+    ), // ← hijau transparan
     builder: (context) => const _LogoutSheet(),
   );
   return result ?? false;
@@ -47,16 +51,9 @@ class _LogoutSheet extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: const Color(0xFFFFEBEE),
-                border: Border.all(
-                  color: const Color(0xFFFFCDD2),
-                  width: 2,
-                ),
+                border: Border.all(color: const Color(0xFFFFCDD2), width: 2),
               ),
-              child: const Icon(
-                Icons.logout,
-                color: AppColors.error,
-                size: 32,
-              ),
+              child: const Icon(Icons.logout, color: AppColors.error, size: 32),
             ),
             const SizedBox(height: 20),
 
@@ -88,8 +85,7 @@ class _LogoutSheet extends StatelessWidget {
                     ),
                   ),
                   TextSpan(
-                    text:
-                        '? Anda harus masuk kembali dengan NISN dan kata sandi untuk mengakses profil Anda.',
+                    text: '? Anda harus masuk kembali dengan NISN dan kata sandi untuk mengakses profil Anda.',
                   ),
                 ],
               ),
@@ -110,18 +106,10 @@ class _LogoutSheet extends StatelessWidget {
                 children: [
                   Stack(
                     children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          image: DecorationImage(
-                            image: NetworkImage(
-                              'https://i.pravatar.cc/150?img=47',
-                            ),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
+                      const ProfileAvatar(
+                        size: 50,
+                        borderColor: AppColors.primarySoft,
+                        borderWidth: 1,
                       ),
                       Positioned(
                         bottom: 0,
