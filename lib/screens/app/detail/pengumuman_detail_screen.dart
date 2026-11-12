@@ -121,20 +121,6 @@ class PengumumanDetailScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF3A3A3A), Color(0xFF1A1A1A)],
-                          ),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Center(
-                          child: Icon(Icons.image_outlined,
-                              color: Colors.white38, size: 60),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
                       Text(
                         body,
                         style: const TextStyle(
