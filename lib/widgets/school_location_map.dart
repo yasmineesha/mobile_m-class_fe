@@ -21,7 +21,7 @@ class SchoolLocationMap extends StatefulWidget {
     -7.8959,
     112.6693,
   );
-  static const double attendanceRadiusMeters = 50;
+  static const double attendanceRadiusMeters = 15;
 
   final double initialZoom;
   final ValueChanged<String>? onLocationStatusChanged;
