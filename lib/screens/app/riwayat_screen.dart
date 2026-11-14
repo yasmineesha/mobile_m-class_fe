@@ -1,5 +1,7 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../utils/attendance_workbook.dart';
 import '../../utils/colors.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/blur_background.dart';
@@ -35,13 +37,124 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
     'Desember 2026',
   ];
 
-  // Simulasi Unduh PDF
-  void _handleDownload() async {
+  List<_RiwayatItem> get _attendanceRecords => [
+    _RiwayatItem(
+      '21',
+      'JUM',
+      'Jumat, 21 Mar 2026',
+      '06.50 - 15.30 WIB',
+      'Hadir',
+      'Tepat Waktu',
+      AppColors.hadir,
+      AppColors.hadirBg,
+      false,
+    ),
+    _RiwayatItem(
+      '20',
+      'KAM',
+      'Kamis, 20 Mar 2026',
+      '06.42 - 15.35 WIB',
+      'Hadir',
+      'Tepat Waktu',
+      AppColors.hadir,
+      AppColors.hadirBg,
+      false,
+    ),
+    _RiwayatItem(
+      '19',
+      'RAB',
+      'Rabu, 19 Mar 2026',
+      'Surat Terverifikasi',
+      'Izin',
+      'Olimpiade Sains Kota',
+      AppColors.izin,
+      AppColors.izinBg,
+      false,
+      'Dispensasi',
+    ),
+    _RiwayatItem(
+      '18',
+      'SEL',
+      'Selasa, 18 Mar 2026',
+      '07.02 - 15.30 WIB',
+      'Hadir',
+      'Tepat Waktu',
+      AppColors.hadir,
+      AppColors.hadirBg,
+      false,
+    ),
+    _RiwayatItem(
+      '17',
+      'SEN',
+      'Senin, 17 Mar 2026',
+      'Surat Dokter Terlampir',
+      'Sakit',
+      '',
+      AppColors.izin,
+      AppColors.sakitBg,
+      true,
+      'Sakit',
+    ),
+    _RiwayatItem(
+      '14',
+      'JUM',
+      'Jumat, 14 Mar 2026',
+      '06.48 - 15.30 WIB',
+      'Hadir',
+      'Tepat Waktu',
+      AppColors.hadir,
+      AppColors.hadirBg,
+      false,
+    ),
+  ];
+
+  Future<void> _handleDownload() async {
     setState(() => _isDownloading = true);
-    await Future.delayed(const Duration(seconds: 2)); // Simulasi loading
-    if (!mounted) return;
-    setState(() => _isDownloading = false);
-    AppSnackBar.show(context, 'Rekap PDF berhasil diunduh!');
+    try {
+      final rows = <List<String>>[
+        ['Tanggal', 'Waktu / Keterangan', 'Status', 'Keterangan', 'Kategori'],
+        for (final item in _attendanceRecords)
+          [
+            item.date,
+            item.subtitle,
+            item.status,
+            item.statusDetail,
+            item.kategori,
+          ],
+      ];
+      final bytes = buildAttendanceWorkbook(rows);
+
+      final monthFileName = _selectedMonth.replaceAll(' ', '_');
+      final savedFile = await FilePicker.saveFile(
+        fileName: 'Rekap_Presensi_$monthFileName.xlsx',
+        bytes: bytes,
+        mimeType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        dialogTitle: 'Simpan Rekap Presensi Excel',
+      );
+
+      if (savedFile != null && mounted) {
+        AppSnackBar.show(context, 'Rekap Excel berhasil disimpan.');
+      }
+    } on UnimplementedError {
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          'Fitur penyimpanan Excel tidak tersedia di perangkat ini.',
+          isError: true,
+        );
+      }
+    } on Exception catch (error) {
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          'Gagal menyimpan rekap Excel: $error',
+          isError: true,
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isDownloading = false);
+    }
   }
 
   @override
@@ -267,77 +380,6 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
 
   // ==== LIST RIWAYAT ====
   Widget _buildRecentList(BuildContext context) {
-    final data = [
-      _RiwayatItem(
-        '21',
-        'JUM',
-        'Jumat, 21 Mar 2026',
-        '06.50 - 15.30 WIB',
-        'Hadir',
-        'Tepat Waktu',
-        AppColors.hadir,
-        AppColors.hadirBg,
-        false,
-      ),
-      _RiwayatItem(
-        '20',
-        'KAM',
-        'Kamis, 20 Mar 2026',
-        '06.42 - 15.35 WIB',
-        'Hadir',
-        'Tepat Waktu',
-        AppColors.hadir,
-        AppColors.hadirBg,
-        false,
-      ),
-      _RiwayatItem(
-        '19',
-        'RAB',
-        'Rabu, 19 Mar 2026',
-        'Surat Terverifikasi',
-        'Izin',
-        'Olimpiade Sains Kota',
-        AppColors.izin,
-        AppColors.izinBg,
-        false,
-        'Dispensasi',
-      ),
-      _RiwayatItem(
-        '18',
-        'SEL',
-        'Selasa, 18 Mar 2026',
-        '07.02 - 15.30 WIB',
-        'Hadir',
-        'Tepat Waktu',
-        AppColors.hadir,
-        AppColors.hadirBg,
-        false,
-      ),
-      _RiwayatItem(
-        '17',
-        'SEN',
-        'Senin, 17 Mar 2026',
-        'Surat Dokter Terlampir',
-        'Sakit',
-        '',
-        AppColors.izin,
-        AppColors.sakitBg,
-        true,
-        'Sakit',
-      ),
-      _RiwayatItem(
-        '14',
-        'JUM',
-        'Jumat, 14 Mar 2026',
-        '06.48 - 15.30 WIB',
-        'Hadir',
-        'Tepat Waktu',
-        AppColors.hadir,
-        AppColors.hadirBg,
-        false,
-      ),
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -370,7 +412,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        ...data.map(
+        ..._attendanceRecords.map(
           (item) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _RiwayatCard(
@@ -411,10 +453,18 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
 
   // ==== TOMBOL UNDUH ====
   Widget _buildDownloadButton() {
-    return GestureDetector(
-      onTap: _isDownloading ? null : _handleDownload,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18),
+    return ElevatedButton(
+      onPressed: _isDownloading ? null : _handleDownload,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        disabledBackgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: EdgeInsets.zero,
+        elevation: 8,
+        shadowColor: AppColors.primary.withValues(alpha: 0.3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      child: Ink(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [
@@ -423,43 +473,40 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
             ],
           ),
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
-              blurRadius: 14,
-              offset: const Offset(0, 8),
-            ),
-          ],
         ),
-        child: Center(
-          child: _isDownloading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.picture_as_pdf_outlined,
-                      color: Colors.white,
-                      size: 20,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          child: Center(
+            child: _isDownloading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-                    SizedBox(width: 10),
-                    Text(
-                      'Unduh Rekap Bulanan PDF',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
+                  )
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.table_chart_outlined,
                         color: Colors.white,
+                        size: 20,
                       ),
-                    ),
-                  ],
-                ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Unduh Rekap Bulanan Excel',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
       ),
     );

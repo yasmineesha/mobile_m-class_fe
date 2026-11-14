@@ -47,6 +47,27 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('download button responds when file saving is unavailable', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: RiwayatScreen())),
+    );
+    await tester.pumpAndSettle();
+
+    final downloadButton = find.text('Unduh Rekap Bulanan Excel');
+    await tester.ensureVisible(downloadButton);
+    await tester.tap(downloadButton);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Fitur penyimpanan Excel tidak tersedia di perangkat ini.'),
+      findsOneWidget,
+    );
+    await tester.pump(const Duration(seconds: 3));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('notification button opens and returns from notifications', (
     tester,
   ) async {
